@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: ip2loc
+
+ip2location:
+  token: ${ip2location_token:${IP2LOCATION_TOKEN:}}
+  edition: DB11LITEBIN
+  database-path: data/IP2LOCATION-LITE-DB11.BIN
+  update-interval: P1D
+
+logging:
+  level:
+    com.example.ip2loc: INFO
