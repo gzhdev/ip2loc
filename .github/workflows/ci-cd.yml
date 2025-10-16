@@ -161,7 +161,6 @@ jobs:
           echo "$response" | grep -q '"status":"UP"'
 
       - name: Test API endpoint (if token is available)
-        if: secrets.IP2LOCATION_TOKEN != ''
         run: |
           response=$(curl -s "http://localhost:8080/api/location?ip=8.8.8.8")
           echo "API response: $response"
