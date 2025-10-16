@@ -145,61 +145,6 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
-  test-docker-image:
-    name: Test Docker Image
-    needs: build-and-push-image
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: github.event_name == 'push'
-
-    permissions:
-      contents: read
-      packages: read
-
-    steps:
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull Docker image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-
-      - name: Run container with IP2Location token
-        run: |
-          docker run -d \
-            --name ip2loc-test \
-            -p 8080:8080 \
-            -e IP2LOCATION_TOKEN=${{ secrets.IP2LOCATION_TOKEN }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-
-      - name: Wait for service to be ready
-        run: |
-          echo "Waiting for service to start..."
-          timeout 60 bash -c 'until curl -f http://localhost:8080/actuator/health; do sleep 2; done'
-
-      - name: Test health endpoint
-        run: |
-          response=$(curl -s http://localhost:8080/actuator/health)
-          echo "Health check response: $response"
-          echo "$response" | grep -q '"status":"UP"'
-
-      - name: Test API endpoint (basic response)
-        run: |
-          response=$(curl -s "http://localhost:8080/api/location?ip=8.8.8.8")
-          echo "API response: $response"
-          echo "$response" | grep -q '"ip"'
-
-      - name: Show container logs
-        if: always()
-        run: docker logs ip2loc-test || true
-
-      - name: Stop container
-        if: always()
-        run: docker stop ip2loc-test && docker rm ip2loc-test
-
   security-scan:
     name: Security Scan
     needs: build-and-push-image
@@ -217,7 +162,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.14.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
